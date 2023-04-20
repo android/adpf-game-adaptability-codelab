@@ -23,6 +23,7 @@
 
 #include "Log.h"
 #include "adpf_manager.h"
+#include "game_mode_manager.h"
 #include "imgui.h"
 #include "imgui_manager.h"
 #include "native_engine.h"
@@ -334,6 +335,8 @@ void DemoScene::SetupUIWindow() {
 void DemoScene::RenderPanel() {
   NativeEngine* native_engine = NativeEngine::GetInstance();
   SceneManager* scene_manager = SceneManager::GetInstance();
+  GameModeManager& game_mode_manager = GameModeManager::getInstance();
+  int32_t swap_interval = scene_manager->GetPreferredSwapInterval();
   int32_t thermal_state = ADPFManager::getInstance().GetThermalStatus();
   assert(thermal_state >= 0 &&
          thermal_state <
@@ -350,6 +353,8 @@ void DemoScene::RenderPanel() {
   ImGui::Text("Array Size: %d", array_size_);
 
   // Show the stat changes according to selected Game Mode
+  ImGui::Text("Game Mode: %s", game_mode_manager.GetGameModeString());
+  ImGui::Text("FPS target: %s", game_mode_manager.GetFPSString(swap_interval));
   ImGui::Text("Surface size: %d x %d", native_engine->GetSurfaceWidth(),
               native_engine->GetSurfaceHeight());
   ImGui::Text("Preferred size: %d x %d", scene_manager->GetPreferredWidth(),

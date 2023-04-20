@@ -23,6 +23,7 @@
 
 #include "Log.h"
 #include "demo_scene.h"
+#include "game_mode_manager.h"
 #include "imgui.h"
 #include "imgui_manager.h"
 #include "native_engine.h"
@@ -132,7 +133,10 @@ void WelcomeScene::SetupUIWindow() {
 void WelcomeScene::RenderPanel() {
   NativeEngine* native_engine = NativeEngine::GetInstance();
   SceneManager* scene_manager = SceneManager::GetInstance();
+  GameModeManager& game_mode_manager = GameModeManager::getInstance();
 
+  // Show the stat changes according to selected Game Mode
+  ImGui::Text("Game Mode: %s", game_mode_manager.GetGameModeString());
   ImGui::Text("Surface size: %d x %d", native_engine->GetSurfaceWidth(),
               native_engine->GetSurfaceHeight());
   ImGui::Text("Preferred size: %d x %d", scene_manager->GetPreferredWidth(),

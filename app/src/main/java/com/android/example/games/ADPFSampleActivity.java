@@ -64,6 +64,7 @@ public class ADPFSampleActivity extends GameActivity {
     }
 
     private ADPFManager adpfManager;
+    private GameModeManager gameModeManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -74,6 +75,7 @@ public class ADPFSampleActivity extends GameActivity {
 
         // Instantiate ADPF manager.
         this.adpfManager = new ADPFManager();
+        this.gameModeManager = new GameModeManager();
 
         super.onCreate(savedInstanceState);
     }
@@ -83,6 +85,7 @@ public class ADPFSampleActivity extends GameActivity {
     protected void onResume() {
         // Register ADPF thermal status listener on resume.
         this.adpfManager.registerListener(getApplicationContext());
+        this.gameModeManager.initialize(getApplicationContext());
 
         super.onResume();
     }
@@ -92,6 +95,7 @@ public class ADPFSampleActivity extends GameActivity {
     protected void onPause() {
         // Remove ADPF thermal status listener on resume.
         this.adpfManager.unregisterListener(getApplicationContext());
+        this.gameModeManager.uninitialize(getApplicationContext());
         super.onPause();
     }
 }

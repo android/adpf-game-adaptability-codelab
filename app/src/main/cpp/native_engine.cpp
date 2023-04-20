@@ -19,6 +19,7 @@
 
 #include "common.h"
 #include "demo_scene.h"
+#include "game_mode_manager.h"
 #include "imgui_manager.h"
 #include "input_util.h"
 #include "scene_manager.h"
@@ -646,6 +647,48 @@ static void _log_opengl_error(GLenum err) {
   }
 }
 
+void NativeEngine::CheckGameMode() {
+  GameModeManager &gameModeManager = GameModeManager::getInstance();
+  int game_mode = gameModeManager.GetGameMode();
+  if (game_mode != mGameMode) {
+    // game mode changed, make necessary adjustments to the game
+    // in this sample, we are capping the frame rate and the resolution
+    SceneManager *sceneManager = SceneManager::GetInstance();
+    NativeEngine *nativeEngine = NativeEngine::GetInstance();
+    int native_width = nativeEngine->GetNativeWidth();
+    int native_height = nativeEngine->GetNativeHeight();
+    int preferred_width;
+    int preferred_height;
+    int32_t preferredSwapInterval = SWAPPY_SWAP_30FPS;
+    if (game_mode == GAME_MODE_STANDARD) {
+      // GAME_MODE_STANDARD : fps: 30, res: 1/2
+      preferredSwapInterval = SWAPPY_SWAP_30FPS;
+      preferred_width = native_width / 2;
+      preferred_height = native_height / 2;
+    } else if (game_mode == GAME_MODE_PERFORMANCE) {
+      // GAME_MODE_PERFORMANCE : fps: 60, res: 1/1
+      preferredSwapInterval = SWAPPY_SWAP_60FPS;
+      preferred_width = native_width;
+      preferred_height = native_height;
+    } else if (game_mode == GAME_MODE_BATTERY) {
+      // GAME_MODE_BATTERY : fps: 30, res: 1/4
+      preferred_height = SWAPPY_SWAP_30FPS;
+      preferred_width = native_width / 4;
+      preferred_height = native_height / 4;
+    } else {  // game_mode == 0 : fps: 30, res: 1/2
+      // GAME_MODE_UNSUPPORTED
+      preferredSwapInterval = SWAPPY_SWAP_30FPS;
+      preferred_width = native_width / 2;
+      preferred_height = native_height / 2;
+    }
+    ALOGI("GameMode SetPreferredSizeAndFPS: %d, %d, %d", preferred_width,
+          preferred_height, preferredSwapInterval);
+    sceneManager->SetPreferredSize(preferred_width, preferred_height);
+    sceneManager->SetPreferredSwapInterval(preferredSwapInterval);
+    mGameMode = game_mode;
+  }
+}
+
 void NativeEngine::SwitchToPreferredDisplaySize() {
   SceneManager *mgr = SceneManager::GetInstance();
   ImGuiManager *gui_mgr = NativeEngine::GetInstance()->GetImGuiManager();
@@ -702,6 +745,7 @@ void NativeEngine::DoFrame() {
   SceneManager *mgr = SceneManager::GetInstance();
   //  ImGuiManager *guiManager = NativeEngine::GetInstance()->GetImGuiManager();
 
+  CheckGameMode();
   SwitchToPreferredDisplaySize();
 
   // if this is the first frame, install the demo scene

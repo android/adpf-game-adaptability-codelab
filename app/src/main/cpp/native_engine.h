@@ -139,6 +139,7 @@ class NativeEngine {
 
   void DoFrame();
 
+  void CheckGameMode();
   void SwitchToPreferredDisplaySize();
 
   bool IsAnimating();

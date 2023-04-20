@@ -105,6 +105,7 @@ add_library(game SHARED
         android_main.cpp
         box_renderer.cpp
         demo_scene.cpp
+        game_mode_manager.cpp
         imgui_manager.cpp
         input_util.cpp
         native_engine.cpp
