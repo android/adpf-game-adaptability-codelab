@@ -49,15 +49,26 @@ WelcomeScene::~WelcomeScene() {}
 //--------------------------------------------------------------------------------
 // Install => StartGraphics => KillGraphics => Uninstall
 void WelcomeScene::OnInstall() {
+  // 1. Game State: Start Loading
+  GameModeManager::getInstance().SetGameState(true, GAME_STATE_NONE);
 }
 
 void WelcomeScene::OnStartGraphics() {
+  // 2. Game State: Finish Loading, showing the attract screen which is
+  // interruptible
+  GameModeManager::getInstance().SetGameState(
+      false, GAME_STATE_GAMEPLAY_INTERRUPTIBLE);
 }
 
 void WelcomeScene::OnKillGraphics() {
+  // 3. Game State: exiting, cleaning up and preparing to load the next scene
+  GameModeManager::getInstance().SetGameState(true, GAME_STATE_NONE);
 }
 
 void WelcomeScene::OnUninstall() {
+  // 4. Game State: Finished unloading this scene, it will be immediately
+  // followed by loading the next scene
+  GameModeManager::getInstance().SetGameState(false, GAME_STATE_UNKNOWN);
 }
 
 void WelcomeScene::OnScreenResized(int width, int height) {}
