@@ -209,6 +209,9 @@ void DemoScene::ControlResetToDefaultSettings() {
 // - Tell the system of the samples workload using ADPF API.
 //--------------------------------------------------------------------------------
 void DemoScene::DoFrame() {
+  // Tell ADPF manager beginning of the perf intensive task.
+  ADPFManager::getInstance().BeginPerfHintSession();
+
   // clear screen
   glClearColor(0.0f, 0.0f, 0.25f, 1.0f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -227,6 +230,11 @@ void DemoScene::DoFrame() {
   imguiManager->EndImGuiFrame();
 
   glEnable(GL_DEPTH_TEST);
+
+  // Tell ADPF manager end of the perf intensive task.
+  // The ADPF manager update PerfHintManager's session using
+  // reportActualWorkDuration() and updateTargetWorkDuration() API.
+  ADPFManager::getInstance().EndPerfHintSession(target_frame_period_);
 }
 
 //--------------------------------------------------------------------------------

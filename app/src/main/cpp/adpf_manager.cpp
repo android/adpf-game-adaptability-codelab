@@ -219,3 +219,22 @@ void ADPFManager::SetThermalStatus(int32_t i) {
 void ADPFManager::SetThermalListener(thermalStateChangeListener listener) {
   thermalListener = listener;
 }
+
+// Indicates the start and end of the performance intensive task.
+// The methods call performance hint API to tell the performance
+// hint to the system.
+void ADPFManager::BeginPerfHintSession() { perfhintsession_start_ = Clock(); }
+void ADPFManager::EndPerfHintSession(jlong target_duration_ns) {
+  if (obj_perfhint_session_) {
+    auto current_clock = Clock();
+    auto duration = current_clock - perfhintsession_start_;
+    jlong duration_ns = duration * 100000000;
+    JNIEnv *env = NativeEngine::GetInstance()->GetJniEnv();
+
+    // Report and update the target work duration using JNI calls.
+    env->CallVoidMethod(obj_perfhint_session_, report_actual_work_duration_,
+                        duration_ns);
+    env->CallVoidMethod(obj_perfhint_session_, update_target_work_duration_,
+                        target_duration_ns);
+  }
+}

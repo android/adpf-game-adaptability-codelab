@@ -22,6 +22,7 @@
 #include <functional>
 
 #include "Log.h"
+#include "adpf_manager.h"
 #include "demo_scene.h"
 #include "game_mode_manager.h"
 #include "imgui.h"
