@@ -69,6 +69,8 @@ class DemoScene : public Scene {
 
   static DemoScene* GetInstance();
 
+  void AdaptThermalLevel(int32_t index);
+
   void ControlStep(bool step_up);
   void ControlBoxCount(bool count_up);
   void ControlResetToDefaultSettings();
@@ -112,6 +114,8 @@ class DemoScene : public Scene {
   void ResetPhysics();
 
   int32_t currentTimeMillis();
+
+  static void on_thermal_state_changed(int32_t last_state, int32_t current_state);
 
   // We want to register a touch down as the equivalent of
   // a button click to ImGui, so we send it an up event

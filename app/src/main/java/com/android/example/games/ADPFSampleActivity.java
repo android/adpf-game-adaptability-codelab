@@ -63,6 +63,8 @@ public class ADPFSampleActivity extends GameActivity {
                 WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
     }
 
+    private ADPFManager adpfManager;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         // When true, the app will fit inside any system UI windows.
@@ -70,18 +72,26 @@ public class ADPFSampleActivity extends GameActivity {
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
         hideSystemUI();
 
+        // Instantiate ADPF manager.
+        this.adpfManager = new ADPFManager();
+
         super.onCreate(savedInstanceState);
     }
 
     // onResume() the activity, register the thermal status listener.
     @Override
     protected void onResume() {
+        // Register ADPF thermal status listener on resume.
+        this.adpfManager.registerListener(getApplicationContext());
+
         super.onResume();
     }
 
     // onPause(), removing the thermal state change listener.
     @Override
     protected void onPause() {
+        // Remove ADPF thermal status listener on resume.
+        this.adpfManager.unregisterListener(getApplicationContext());
         super.onPause();
     }
 }

@@ -22,6 +22,7 @@
 #include <functional>
 
 #include "Log.h"
+#include "adpf_manager.h"
 #include "imgui.h"
 #include "imgui_manager.h"
 #include "native_engine.h"
@@ -36,6 +37,19 @@ const char* thermal_state_label[] = {
     "THERMAL_STATUS_MODERATE", "THERMAL_STATUS_SEVERE",
     "THERMAL_STATUS_CRITICAL", "THERMAL_STATUS_EMERGENCY",
     "THERMAL_STATUS_SHUTDOWN"};
+
+const int32_t thermal_state_physics_steps[] = {
+    16,
+    12,
+    8,
+    4,
+};
+const int32_t thermal_state_array_size[] = {
+    8,
+    6,
+    4,
+    2,
+};
 
 const int32_t kPhysicsResetTime = 10000;  // 10 sec
 
@@ -64,6 +78,11 @@ DemoScene::DemoScene() {
   InitializePhysics();
 
   instance_ = this;
+
+  ADPFManager::getInstance().SetThermalListener(on_thermal_state_changed);
+
+  current_thermal_index_ = ADPFManager::getInstance().GetThermalStatus();
+  AdaptThermalLevel(current_thermal_index_);
 }
 
 //--------------------------------------------------------------------------------
@@ -74,6 +93,8 @@ DemoScene::~DemoScene() {
   CleanupPhysics();
 
   instance_ = NULL;
+
+  ADPFManager::getInstance().SetThermalListener(NULL);
 }
 
 //--------------------------------------------------------------------------------
@@ -93,6 +114,29 @@ void DemoScene::OnUninstall() {
 }
 
 void DemoScene::OnScreenResized(int width, int height) {}
+
+void DemoScene::on_thermal_state_changed(int32_t last_state,
+                                         int32_t current_state) {
+  if (last_state != current_state) {
+    getInstance()->AdaptThermalLevel(current_state);
+  }
+}
+
+void DemoScene::AdaptThermalLevel(int32_t index) {
+  int32_t current_index = index;
+  int32_t array_size = sizeof(thermal_state_physics_steps) /
+                       sizeof(thermal_state_physics_steps[0]);
+  if (current_index < 0) {
+    current_index = 0;
+  } else if (current_index >= array_size) {
+    current_index = array_size - 1;
+  }
+
+  current_physics_step_ = thermal_state_physics_steps[current_index];
+  array_size_ = thermal_state_array_size[current_index];
+
+  recreate_physics_obj_ = true;
+}
 
 //--------------------------------------------------------------------------------
 // Control the simulation parameters
@@ -156,6 +200,9 @@ void DemoScene::DoFrame() {
   glClearColor(0.0f, 0.0f, 0.25f, 1.0f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glDisable(GL_DEPTH_TEST);
+
+  // Update ADPF status.
+  ADPFManager::getInstance().Monitor();
 
   UpdatePhysics();
 
@@ -287,11 +334,18 @@ void DemoScene::SetupUIWindow() {
 void DemoScene::RenderPanel() {
   NativeEngine* native_engine = NativeEngine::GetInstance();
   SceneManager* scene_manager = SceneManager::GetInstance();
+  int32_t thermal_state = ADPFManager::getInstance().GetThermalStatus();
+  assert(thermal_state >= 0 &&
+         thermal_state <
+             sizeof(thermal_state_label) / sizeof(thermal_state_label[0]));
 
   // Show current thermal state on screen.
   // In this sample, no dynamic performance adjustment based on Thermal State
   // To see dynamic performance adjustment based on Thermal State see the ADPF
   // Sample
+  ImGui::Text("Thermal State:%s", thermal_state_label[thermal_state]);
+  ImGui::Text("Thermal Headroom:%f",
+              ADPFManager::getInstance().GetThermalHeadroom());
   ImGui::Text("Physics Steps:%d", current_physics_step_);
   ImGui::Text("Array Size: %d", array_size_);
 

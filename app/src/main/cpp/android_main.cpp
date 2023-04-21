@@ -15,6 +15,7 @@
  */
 
 #include "NDKHelper.h"
+#include "adpf_manager.h"
 #include "native_engine.h"
 
 extern "C" {
@@ -28,6 +29,25 @@ jint JNI_OnLoad(JavaVM *vm, void * /* reserved */) {
     return JNI_ERR;
   }
 
+  // Find your class. JNI_OnLoad is called from the correct class loader context
+  // for this to work.
+  jclass c = env->FindClass("com/android/example/games/ADPFManager");
+  if (c == nullptr) return JNI_ERR;
+
+  // Register your class' native methods.
+  static const JNINativeMethod methods[] = {
+      {"nativeThermalStatusChanged", "(I)V",
+       reinterpret_cast<void *>(nativeThermalStatusChanged)},
+      {"nativeRegisterThermalStatusListener", "()V",
+       reinterpret_cast<void *>(nativeRegisterThermalStatusListener)},
+      {"nativeUnregisterThermalStatusListener", "()V",
+       reinterpret_cast<void *>(nativeUnregisterThermalStatusListener)},
+  };
+  int rc = env->RegisterNatives(c, methods,
+                                sizeof(methods) / sizeof(JNINativeMethod));
+
+  if (rc != JNI_OK) return rc;
+
   return JNI_VERSION_1_6;
 }
 
@@ -39,6 +59,8 @@ jint JNI_OnLoad(JavaVM *vm, void * /* reserved */) {
 void android_main(struct android_app *app) {
   std::shared_ptr<NativeEngine> engine(new NativeEngine(app));
 
+  // Set android_app to ADPF manager.
+  ADPFManager::getInstance().SetApplication(app);
   ndk_helper::JNIHelper::Init(app);
 
   engine->GameLoop();

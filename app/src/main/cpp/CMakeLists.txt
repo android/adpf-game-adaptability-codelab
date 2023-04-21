@@ -101,6 +101,7 @@ target_compile_definitions(bullet3 PRIVATE BT_THREADSAFE=1)
 
 # now build app's shared lib
 add_library(game SHARED
+        adpf_manager.cpp
         android_main.cpp
         box_renderer.cpp
         demo_scene.cpp
