@@ -21,7 +21,25 @@
 #include <android/log.h>
 #include <android/thermal.h>
 
+#if __ANDROID_API__ >= 33
+    #include <ctime>
+    #include <android/performance_hint.h>
+#endif
+
+#include <algorithm>
+#include <chrono>
 #include <memory>
+#include <thread>
+#include <unistd.h>
+#include <vector>
+
+    // #include <algorithm>
+    // #include <unistd.h>
+    // #include <chrono>
+    // #include <cstdio>
+    // #include <cstdlib>
+    // #include <cstring>
+    // #include <sstream>
 
 #include "common.h"
 #include "native_engine.h"
@@ -53,15 +71,19 @@ class ADPFManager {
       if (obj_power_service_ != nullptr) {
         app_->activity->env->DeleteGlobalRef(obj_power_service_);
       }
+#if __ANDROID_API__ >= 33
+#elif __ANDROID_API >= 30
+      if (thermal_manager_ != nullptr) {
+        AThermal_releaseManager(thermal_manager_);
+      }
+#else
       if (obj_perfhint_service_ != nullptr) {
         app_->activity->env->DeleteGlobalRef(obj_perfhint_service_);
       }
       if (obj_perfhint_session_ != nullptr) {
         app_->activity->env->DeleteGlobalRef(obj_perfhint_session_);
       }
-      if (thermal_manager_ != nullptr) {
-        AThermal_releaseManager(thermal_manager_);
-      }
+#endif
     }
   }
   // Delete copy constructor since the class is used as a singleton.
@@ -91,31 +113,44 @@ class ADPFManager {
   void BeginPerfHintSession();
   void EndPerfHintSession(jlong target_duration_ns);
 
+  void AddThreadIdToHintSession(int32_t tid);
+  void RemoveThreadIdFromHintSession(int32_t tid);
+
   // Method to retrieve thermal manager. The API is used to register/unregister
   // callbacks from C API.
+#if __ANDROID_API__ >= 30
   AThermalManager* GetThermalManager() { return thermal_manager_; }
+#endif
 
  private:
   // Update thermal headroom each sec.
-  static constexpr int32_t kThermalHeadroomUpdateThreshold = 1;
+  static constexpr auto kThermalHeadroomUpdateThreshold = std::chrono::seconds(1);
 
   // Function pointer from the game, will be invoked when we receive state changed event from Thermal API
   static thermalStateChangeListener thermalListener;
 
   // Ctor. It's private since the class is designed as a singleton.
   ADPFManager()
-      : thermal_manager_(nullptr),
+      :
+#if __ANDROID_API__ >= 30
+        thermal_manager_(nullptr),
+#endif
         thermal_status_(0),
         thermal_headroom_(0.f),
         obj_power_service_(nullptr),
-        get_thermal_headroom_(0),
+        get_thermal_headroom_(0)
+#if __ANDROID_API__ >= 33
+#else
+        , 
+        preferred_update_rate_(0),
         obj_perfhint_service_(nullptr),
         obj_perfhint_session_(nullptr),
+        set_threads_(0),
         report_actual_work_duration_(0),
-        update_target_work_duration_(0),
-        preferred_update_rate_(0) {
-    last_clock_ = Clock();
-    perfhintsession_start_ = 0;
+        update_target_work_duration_(0)
+#endif
+        {
+        last_clock_ = std::chrono::high_resolution_clock::now();
   }
 
   // Functions to initialize ADPF API's calls.
@@ -123,21 +158,38 @@ class ADPFManager {
   float UpdateThermalStatusHeadRoom();
   bool InitializePerformanceHintManager();
 
+  void RegisterThreadIdsToHintSession();
+
+#if __ANDROID_API__ >= 30
   AThermalManager* thermal_manager_;
+#endif
+
   int32_t thermal_status_;
   float thermal_headroom_;
-  float last_clock_;
+
+  std::chrono::time_point<std::chrono::high_resolution_clock> last_clock_;
   std::shared_ptr<android_app> app_;
   jobject obj_power_service_;
   jmethodID get_thermal_headroom_;
 
+  std::chrono::time_point<std::chrono::steady_clock> perf_start_;
+
+  std::vector<int32_t> thread_ids_;
+
+#if __ANDROID_API__ >= 33
+  APerformanceHintManager *hint_manager_ = nullptr;
+  APerformanceHintSession *hint_session_ = nullptr;
+  int64_t last_target_ = 16666666;
+#else
+  jlong preferred_update_rate_;
   jobject obj_perfhint_service_;
   jobject obj_perfhint_session_;
+  jmethodID create_hint_session_;
+  jmethodID set_threads_;
   jmethodID report_actual_work_duration_;
   jmethodID update_target_work_duration_;
-  jlong preferred_update_rate_;
+#endif
 
-  float perfhintsession_start_;
 };
 
 #endif  // ADPF_MANAGER_H_
