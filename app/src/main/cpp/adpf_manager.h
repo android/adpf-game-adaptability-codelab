@@ -33,14 +33,6 @@
 #include <unistd.h>
 #include <vector>
 
-    // #include <algorithm>
-    // #include <unistd.h>
-    // #include <chrono>
-    // #include <cstdio>
-    // #include <cstdlib>
-    // #include <cstring>
-    // #include <sstream>
-
 #include "common.h"
 #include "native_engine.h"
 #include "util.h"
@@ -71,10 +63,16 @@ class ADPFManager {
       if (obj_power_service_ != nullptr) {
         app_->activity->env->DeleteGlobalRef(obj_power_service_);
       }
-#if __ANDROID_API__ >= 33
-#elif __ANDROID_API >= 30
+
+#if __ANDROID_API >= 30
       if (thermal_manager_ != nullptr) {
         AThermal_releaseManager(thermal_manager_);
+      }
+#endif
+
+#if __ANDROID_API__ >= 33
+      if ( hint_session_ != nullptr ) {
+        APerformanceHint_closeSession(hint_session_);
       }
 #else
       if (obj_perfhint_service_ != nullptr) {

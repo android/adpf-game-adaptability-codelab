@@ -55,8 +55,8 @@ void nativeUnregisterThermalStatusListener(JNIEnv *env, jclass cls) {
 // the device's thermal throttling status.
 void ADPFManager::Monitor() {
   auto current_clock = std::chrono::high_resolution_clock::now();
-  auto past = current_clock - last_clock_;
-  if (past >= kThermalHeadroomUpdateThreshold) {
+  auto duration = current_clock - last_clock_;
+  if (duration >= kThermalHeadroomUpdateThreshold) {
     // Update thermal headroom.
     UpdateThermalStatusHeadRoom();
     last_clock_ = current_clock;
@@ -77,7 +77,7 @@ void ADPFManager::SetApplication(android_app *app) {
 // Initialize JNI calls for the powermanager.
 bool ADPFManager::InitializePowerManager() {
 #if __ANDROID_API__ >= 30
-  if (android_get_device_api_level() >= 31) {
+  if (android_get_device_api_level() >= 30) {
     // Initialize the powermanager using NDK API.
     thermal_manager_ = AThermal_acquireManager();
     return true;
@@ -142,7 +142,7 @@ float ADPFManager::UpdateThermalStatusHeadRoom() {
   thermal_headroom_ =
       env->CallFloatMethod(obj_power_service_, get_thermal_headroom_,
                            kThermalHeadroomUpdateThreshold);
-  ALOGE("Current thermal Headroom %f", thermal_headroom_);
+  ALOGI("Current thermal Headroom %f", thermal_headroom_);
   return thermal_headroom_;
 }
 
@@ -159,10 +159,10 @@ bool ADPFManager::InitializePerformanceHintManager() {
         tids[0] = tid;
         hint_session_ = APerformanceHint_createSession(hint_manager_, tids, 1, last_target_);
     }
-    ALOGE("ADPFManager::InitializePerformanceHintManager __ANDROID_API__ 33");
+    ALOGI("ADPFManager::InitializePerformanceHintManager __ANDROID_API__ 33");
     return true;
 #else  
-  ALOGE("ADPFManager::InitializePerformanceHintManager __ANDROID_API__ < 33");
+  ALOGD("ADPFManager::InitializePerformanceHintManager __ANDROID_API__ < 33");
   JNIEnv *env = NativeEngine::GetInstance()->GetJniEnv();
 
   // Retrieve class information
